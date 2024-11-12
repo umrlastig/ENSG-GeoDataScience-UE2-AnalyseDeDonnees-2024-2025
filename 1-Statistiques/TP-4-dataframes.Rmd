@@ -1,0 +1,358 @@
+
+  
+  
+
+# Échauffement : Calcul du mode
+
+
+Écrire une fonction qui calcule le mode d'une variable continue , prenant en argument un vecteur de valeurs, et un nombre d'intervalles qui discrétise son étendue. 
+
+
+Indice : on peut utiliser la fonction `seq` ou `cut` pour discrétiser l'étendue de la variable 
+
+Pour générer les données à discrétiser,  utiliser le  code suivant qui génère 10000 valeurs,  échantillonnées dans une loi normale de moyenne 10 et d'écart type 5 (fonction `rnorm`) 
+
+```{r genDat}
+variable_continue <-  rnorm(10000, 10,5)
+```
+
+
+# package dplyr pour manipuler les dataframe
+
+## Installation 
+
+Si ce n'est pas déjà fait, installer le package `dplyr` (n'éxécuter qu'une seule fois l'installation du package)
+
+```{r instdplyr, eval=F}
+install.packages("dplyr")
+```
+
+Puis charger le package à l'aide de la fonction `library()`, au début de votre script (pour que la commande soit exécutée au début de chaque seession).
+
+
+```{r loaddply, eval=T, message=FALSE}
+library(dplyr)
+```
+
+
+## Enchainer les traitements avec les pipes
+
+`dplyr` utilise le pipe noté ` %>% ` pour enchainer deux traitements sur le même objet. 
+
+Cette notation est pratique et concise et représente bien la chaîne de traitements, sans abuser de parenthèses ou de variables intermédiaires.
+
+Dans l'exemple ci-dessous, volontairement simpliste, on génère 50 valeurs tirées dans une loi normale, puis on enchaîne un arrondi (fonction `round()` avec le calcul de la moyenne (fonction `mean()`) sur un vecteur de valeurs entières.
+
+```{r pipe1, eval=T}
+valeurs <-  rnorm(50,mean = 20, sd=1) #50 échantillons dans une loi normale
+valeurs
+
+valeurs %>% round() %>% mean()
+```
+
+NB : en l'absence d'arguments supplémentaires dans les fonctions chaînées, on peut s'économiser les parenthèses
+
+En écrivant classiquement le même traitement on aurait quelque chose de ce style : 
+
+```{r pipe12, eval=F}
+valeurs <-  rnorm(50,mean = 20, sd=1) #50 échantillons dans une loi normale
+# façon classique 1
+resultat <-  mean(round(valeurs))
+
+# façon classique 2
+arrondis <-  round(valeurs)
+resultat <-  mean(arrondis)
+```
+
+
+Il faut imaginer le gain de place conséquent lorsqu'on enchaîne plusieurs traitements élémentaires pour réaliser un traitement complexe. 
+
+Dans ce qui suit , j'essayerai dans la mesure du possible de donner pour chaque exemple la façon classique et la façon «dplyrienne» ;  je recommande de se familiariser le plus tôt possible avec la seconde.
+
+
+# Filtrage
+
+C'est une fonction incontournable 
+
+## Filtrage d'un dataset selon une variable 
+
+
+`starwars` est un dataset sur les personnages de la franchise de films Star Wars. 
+Une fois le package `dplyr` chargé, il est immédiatement disponible et est nommé tout simplement  `starwars`.
+
+Voici à qui ressemblent ses premières lignes :
+
+```{r filtre1, eval=F}
+head(starwars) 
+```
+```{r filtre1.1, eval=T, echo=F}
+library(knitr)
+head(starwars[,1:11]) %>%  kable()
+```
+
+Voici comment filtrer le dataset suivant une valeur numérique : `height` 
+
+
+```{r filtre2, eval=F}
+filter(starwars, height < 100)
+```
+```{r filtre2.2, eval=T, echo=F}
+filter(starwars, height < 100)[,1:11] %>% kable()
+```
+
+la syntaxe utilisant les pipes est la suivante 
+
+```{r filtre2.3, eval=F}
+starwars %>% filter(height < 100)
+```
+
+NB : on peut remarquer qu'à la différence de l'accès au dataframe classique, il n'est pas besoin de mettre les noms de variables entre guillemets (ou double quotes in english).
+
+
+Si on voulait utiliser l'indexation classique des dataframes de R, on écrirait : 
+
+
+```{r filtre2.4, eval=T}
+starwars[ starwars$height < 100 , ]
+```
+
+
+Notez que les valeurs NA sont conservées avec cette syntaxe, alors qu'elles sont filtrées par `filter`
+
+### Filtrage d'un dataset sur plusieurs variables
+
+Plusieurs critères de filtrage peuvent s'appliquer en une seule fois, ce qui évite de faire plusieurs filtres les uns à la suite des autres.  `dplyr` se charge de faire les "ET" logiques entre les critères
+
+
+Par exemple, pour déterminer les personnages humains mesurant plus d'un mètre quatre-vingt, on écrira : 
+
+```{r filtre3, eval=F}
+filter(starwars, height >= 180, species=="Human")
+# en dplyr
+starwars %>% filter(height >= 180, species=="Human")
+```
+
+
+```{r filtre3.3, eval=T, echo=F}
+res <- starwars %>% filter(height >= 180 & species=="Human") 
+res[,1:11]%>%  kable()
+```
+
+
+## Exercice 
+
+Déterminer quel est le plus grand personnage d'espèce humaine (variable `species`) dont le monde de résidence (variable `homeworld`) est Tatooine.
+
+indice : utiliser la fonction `slice_max` de dplyr.
+
+```{r exoBigHuman, eval=F}
+starwars %>% filter(species=="Human", homeworld=="Tatooine") %>% slice_max(order_by=height)
+```
+
+
+# Regrouppement 
+
+
+Pour regrouper selon des variables, on utilise la fonction`group_by`. 
+
+```{r groupby1, echo=T, eval=T}
+starwars %>% group_by(homeworld)
+```
+
+
+NB : les lignes n'apparaissent pas "regroupées" dans la console. Tant qu'elles ne sont pas agrégées par une opération, elles n'ont pas lieu d'être affichées sous forme agrégées. 
+R a simplement noté la présence de groupe comme l'indique la deuxième ligne de la sortie : `Groups:homeworld [49]`, et effectuera des traitements par groupe si on lui demande dans une étape ultérieure. 
+
+
+## Agregéation
+
+Il est très courant d'opérer des agrégations juste après un regroupement. 
+Une opération typique est de calcul une moyenne par groupe. 
+
+Pour créer une valeur agrégée , calculée sur les groupes issus d'un `group_by`, il faut utiliser la fonction `summarise()`, derrière le regroupement.
+
+Voici comment calculer la taille moyenne des individus de genre masculin  par monde d'origine : 
+
+
+```{r groupby2, echo=T, eval=F}
+starwars %>% filter(gender=="masculine") %>% 
+          group_by(homeworld) %>% 
+          summarize(mean_size=mean(height, na.rm=T))
+```
+
+et le résultat, limité aux 6 premières lignes : 
+
+```{r groupby2.2, echo=F, eval=T}
+starwars %>% filter(gender=="masculine") %>% 
+          group_by(homeworld) %>% 
+          summarize(mean_size=mean(height, na.rm=T)) %>% head(6)%>% kable(digits=0)
+```
+
+NB: toutes les autres colonnes ont disparu du résultat : ne restent que la variable de regroupement , et le résultat de l'agrégation.
+
+
+## Regroupement et agrégation multiples
+
+Les deux opérations sont (à peu près) combinables à l'infini.
+On peut par exemple afficher le nombre total de personnage de plus d'un mètre cinquante  présentes dans chaque planète, de chaque espèce, le tout ordonné par nombre décroissant : 
+
+
+```{r groupby2.3, echo=T, eval=F}
+starwars %>% filter (height >150) %>% 
+          group_by(homeworld,species,) %>% 
+          summarize( nombre = n()) %>%  na.omit() %>% 
+          arrange(-nombre) 
+          
+```
+
+```{r groupby2.4, echo=F, eval=T}
+starwars %>% filter (height >150) %>% 
+          group_by(homeworld,species,) %>% 
+          summarize( nombre = n()) %>%  na.omit() %>% 
+          arrange(-nombre) %>% kable()
+```          
+
+
+
+
+## Création de nouvelles variables agrégées
+
+
+
+Après un regroupement, il est courant de calculer des métriques sur ces regroupement : des sommes des moyennes etc. 
+
+La création de nouvelles variables se fait à l'aide de la fonction `mutate` de `dplyr`. 
+
+Chaque nouvelle variable calculée est déclarée dans la fonction mutate qui prend en argument une ou plusieurs expressions de la forme: 
+
+`nom_de_ma_nouvelle_variable = fonction(param1,param2,....) `
+
+
+Par exemple  voici une classification des personnages en deux classes `grand` et `petit` selon que leur taille est inférieur ou supérieure à 1.40m , regroupés par `species` et `homeworld`: 
+
+```{r mutate1, echo=T, eval=T}
+starwars %>%  
+          group_by(homeworld,species,) %>% 
+          mutate( nombre = n(),
+                  classe_taille= ifelse(height>140, "grand", "petit")
+                  ) %>%  
+          select(homeworld,species,nombre,classe_taille)
+```
+
+
+
+dans le bloc de code ci-dessus, après un regroupement (fonction `group_by` ) , deux variables sont créées : `nombre` et `classe_taille`.
+
+La première utilise une fonction particulière de `dplyr` : `n()`, qui compte la taille du groupe courant. 
+
+
+Toute fonction qui retourne un résultat peut être utilisée pour peupler la nouvelle valeur, comme le montre la seconde variable `classe_taille`, qui ici n'utilise pas particulièrement le regroupement et donne, pour chaque individu une chaîne de caractère fonction de sa variable `height`.  
+
+
+# Exercice:  masse moyenne des pingouins
+
+ Le jeu de données `palmerpinguins` contient des données sur les manchots de trois îles et de trois espèces. 
+ 
+ 1. Compter le nombre de pingouins de chaque espèce dans chaque île, à l'aide de la fonction `n()` qui après un regroupement compte le nombre d'individus d'un groupe. 
+ 2. Calculer la masse moyenne de ces pingouins.
+ 
+ 
+ 
+# Sélectionner des colonnes
+
+`dplyr` propose des fonctions qui facilitent la sélection de colonnes d'un dataframe (on fait l'hypothèse que le dataframe est "bien" formé, i.e. les colonnes sont des variables et les lignes des observations)
+
+## Sélection par nom 
+ 
+ la fonction `select` prend en argument principal des noms de colonnes, sans utiliser de guillemets, et retour un dataframe constitué de ces colonnes.
+ 
+ Exemple : les six première lignes du dataframe `starwars` , dont on sélectionne les colonnes `name` et `homeworld`. La fonction `head()` est utilisée pour ne garder que les 6 première lignes.
+ 
+ 
+```{r select.1, echo=T, eval=T}
+starwars %>% select(name, homeworld) %>%  head(6)
+```
+ 
+
+On peut également retirer des variables en les préfixant par un signe moins `-`
+
+
+```{r select.2, echo=T, eval=T}
+names(starwars)
+starwars %>% select(-films, -starships, - birth_year,-sex,-gender,-vehicles) %>%  head(6)
+```
+ 
+ 
+ Des fonctions auxiliaires très pratiques permettent de sélectionner des colonnes dont le noms contiennent un certain motif (pattern) 
+ 
+ Voici par exemple comment sélectionner la variable `name` et toutes les variables dont le nom contient la chaîne de caractères `color`
+ 
+```{r select.3, echo=T, eval=T}
+starwars %>% select(name, matches("color")) %>%  head(6)
+```
+ 
+ Consulter la documentation pour voir la liste de ces fonctions auxiliaires (appelées "helpers")
+ 
+ 
+ 
+## Sélection par type
+ 
+ Un des fonctions auxiliaires particulièrement pratique est la clause `where` , qui permet  de selectionner les variables selon leur type , grâce aux fonctions qui testent le type : `is.numeric`, `is.character`, `is.factor` et `is.logical` pour les plus employées. 
+
+
+Le code ci-dessous sélectionne toutes les variables numériques du dataset starwars :
+
+```{r select.4, echo=T, eval=T}
+starwars %>% select(where(is.numeric)) %>%  head(6) 
+```
+ 
+ 
+ N.B. il ne faut pas mettre de parenthèses aux fonctions d'identification de type dans le cas où on les passe en argumenet à la clause `where`
+ 
+ 
+Le code ci-dessous sélectionne toutes les variables de type chaîne de caractères  du dataset starwars.
+
+```{r select.5, echo=T, eval=T}
+starwars %>% select(where(is.character)) %>%  head(6) 
+```
+ 
+ 
+ 
+ 
+# Fonctions pratiques diverses 
+ 
+## "top $n$"  par variable  
+ 
+ 
+ La fonction `slice_max` (respectivement `slice_min`) permet de selectionner les $n$ individus dont la valeurs d'une variable est la plus élevée (resp. basse) 
+ 
+ 
+ Par exemple , on peut obtenir les 5 personnages de les plus petits de starwars avec le code suivant  : 
+ 
+ 
+```{r topn, echo=T, eval=T}
+starwars %>% slice_min(order_by = height, n=5)
+```
+ 
+
+## Enlever des doublons 
+
+
+la fonction `distinct` permet de dédoublonner un dataframe. 
+
+
+Créons d'abord un dataframe avec des doublons, par exemple : 
+
+ 
+```{r distinct2, echo=T, eval=T}
+doublons <- starwars %>% select(homeworld, species)
+doublons
+```
+
+
+On retire ensuite les doublons : 
+
+```{r distinct, echo=T, eval=T}
+doublons %>%  distinct()
+```
+

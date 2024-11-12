@@ -1,0 +1,180 @@
+
+
+# Mise en place 
+
+- Récupérer le fichier intitulé `2020_LoL_esports_match_data.csv` sur le repertoire partagé et le charger dans un dataframe (rappel : fonction `read_=.csv`)
+- charger les librairies `dplyr` et `ggplot2` si elles ont déjà été installées (les installer sinon)
+
+```{r setup, echo=T}
+library(ggplot2)
+library(dplyr)
+match_data <-  read.csv("./2020_LoL_esports_match_data.csv")
+```
+
+Le fichier contient des données de matchs d'un jeu compétitif en ligne, League of Legends, qui oppose deux équipes de 5 joueurs dans une arène. Les données sont disponibles pour chaque joueur de chaque match: une ligne décrit les caractéristiques d'un joueur lors d'un match.
+Le data set est assez vaste : il y a 86 000 lignes et 117 colonnes.
+
+
+Deux données semblent particulièrement importantes selon les joueurs au cours d'un match : l'or gagné en chassant des créatures ou d'autres joueurs , et le nombre de jouers adverses tués par l'équipe adverse.
+
+
+
+# Corrélation 
+
+La fonction `cor()` calcule des correlations entre deux vecteurs de valeurs, la fonction `test.cor()` également , et donne aussi la p-value associée. 
+
+
+Voici par exemple le  code qui permet de calculer la corrélation entre la longueur du match en secondes et la quantité d'or gagnée.
+
+
+```{r cor1, echo=T}
+cor(match_data$gamelength, match_data$totalgold)
+```
+
+```{r cor2, echo=T}
+cor.test(match_data$gamelength, match_data$totalgold)
+```
+
+
+
+
+## Exercice 1 : Variables les plus corrélées 
+
+
+Déterminer les variables 4 numériques (quantitatives) les plus corrélées au sens de Pearson de ce jeu de données 
+
+
+Voici comment ne garder que les variables numériques d'un jeu de données . Attention, il s'agit des colonnes de type 'numérique', ça ne signifie pas pour autant que les données sont quantitatives  en elles-mêmes. (Rappellez-vous que des données qualitatives peuvent être codées avec des nombres)
+
+
+```{r filter_numeric, echo=T}
+match_data_num <-  select(match_data, where(is.numeric))
+head(match_data_num)
+```
+
+Notez également qu'avec cette fonction `select`, le deuxième argument est une clause `where` qui prend en argument un  prédicat, et pas une fonction. Il s'agit  du nom de la fonction **sans** les parenthèses habituelles. Techniquement , toute fonction qui renvoie une valeur booléenne peut être utilisée en tant que prédicat. 
+
+
+
+On peut supprimer d'ores et déjà certaines variables qui ne sont clairement pas quantitatives : la version du patch, l'année, et l'attribut `playoffs` qui ne contient que des valeurs 0 ou 1. 
+```{r filter_numeric2, echo=T}
+#les 15 premiers noms des colonnes
+head(names(match_data_num), 15)
+match_data_num <-  select(match_data_num,-c(year, playoffs,patch, playerid, game, result  ))
+```
+
+Il est suggéré de suivre les étapes suivantes : 
+
+1. Obtenir la matrice de corrélation 
+2. Rendre la matrice de corrélation triangulaire 
+3. Prendre les valeurs absolues
+4. trier les valeurs par ordre décroissant
+5. retrouver les index des n premières valeurs
+6. Former les couples de variables à partir des index
+
+
+
+
+
+
+
+## Exercice 2 : Variables les moins corrélées 
+
+
+Réitérer le traitement précédent , mais cette fois pour extraire les 4 variables les moins corrélées. 
+
+Ces variables sont-elles utiles à analyser ? (outre le fait que les corrélations entre elles sont très faible par défintion)
+
+
+
+
+
+
+Confirmer la faible corrélation par un nuage de points pour quelques couples de variables peu corrélées. 
+
+
+
+
+Variante plus difficile  laissée en exercice : faire une fonction qui génère  les nuages de points de tous les couples de variables dont la corrélation est inférieure ou supérieure  à un certain seuil (en valeur absolue) .
+
+
+
+## Exercice 3
+
+
+Détecter un couple de variable pour lesquelles la corrélation de Pearson est inférieure à la corrélation de Spearman.
+
+
+
+
+
+
+Peut-être peut-on formuler une hypothèse sur le fait que la corrélation linéaire est moindre par rapport à celle du rang ? (cela dépend beaucoup des variables choisies )
+
+# Régression linéaire 
+
+
+
+
+
+  
+  Selectionner un couple de variables dont la corrélation linéaire est élevée et tracer son nuage de points.
+  
+  Voici par exemple celui des variables `dpm` et `earned.gpm`
+  
+  
+  
+  
+## Exercice 4 : regression linéaire
+
+
+Réaliser la régression linéaire entre les deux variables ci-dessus (fonction `lm()`). 
+Stocker le résultat dans une variable, ert commenter les résultats (fonction `summary`)
+  
+
+
+Si on suppose que la variable `earned.gpm` signifie «earned gold per minute» et que la variable `dpm` signifie «damage per minute» , il semblerait logique que plus un joueur inflige de dommage, plus il chasse de créatures et/ ou tue des adversaires, recevant ainsi de l'or.
+
+Commenter les résultats , en particulier les p-values associées aux coefficients. Comment améliorer cela ?
+
+
+## Exercice 5 : regroupements
+
+
+D'après le graphique de la variable `dpm` et `earned.gpm`, on voit apparaître deux groupes d'individus.
+
+ L'un est constitué de `dpm` faibles (< 2000) et de `earned.gpm` en dessous de 500.
+ 
+ Ces critères peuvent suffire à former les deux groupes. Neanmoins , vous pouvez proposer une troisième variable (ou combinaison de variables) pour former un critère qui expliquerait cette répartition en deux groupes.
+ 
+ 
+ 
+ 
+ 
+ 
+ Former les deux groupes d'individus et recommencer la régression linéaire. Cela amémliore-t-il les résultats ? 
+ 
+Dans chaque sous groupe, étudier l'influence de l'issue du match (variable `result` , numérique, mais qualitative ) sur l'or gagné par minute et les `dpm`.
+ 
+ 
+
+# Test d'indépendance du $\chi^2$
+
+
+Déterminer les variables qualitatives qui semblent avoir un lien avec la variable qualitative `result`
+
+
+En cas d'échec , on peut tout à fait proposer d'autres  variables, par exemple basées sur des seuils, comme `match_data$earned.gpm < 500`
+ 
+ Attention aux messages de warning ! Dans le cas du Chi 2 , ils préviennent qu'il n'y a pas assez d'individus dans les cases du tableau de contingence pour que l'estimation soit fiable. 
+ 
+```{r chi2, cache=T}
+chisq.test(match_data$result, match_data$earned.gpm < 500)
+```
+
+
+Quelle est la variable la plus liée au résultat du match ? 
+Les résultats seraient-ils différents si on faisait un groupement par équipe et par match de ces données ? 
+  
+  
+  

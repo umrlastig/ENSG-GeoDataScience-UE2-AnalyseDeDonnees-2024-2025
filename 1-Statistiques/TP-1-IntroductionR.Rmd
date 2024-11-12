@@ -1,0 +1,1106 @@
+---
+title: "Premières manipulations avec R"
+author: "PC"
+date: "2023-24"
+output: 
+   html_document :
+     theme: paper
+     toc_float: 
+        collapsed: true
+     toc: yes
+     highlight: tango
+     number_sections: yes
+     number_subsections: yes
+self-contained : yes
+---
+
+
+
+
+
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(class.source = "bg.success")
+library(rmarkdown)
+library(dplyr)
+setwd("/home/paulchapron/coursDESIGEO/TP_stats_DESIGEO/TP1/")
+```
+
+
+```{css, echo=FALSE}
+.code_guide {
+  background-color: #FF0000;
+}
+```
+
+
+# Hello World
+
+La fonction `print` affiche une chaîne de caractère ou une valeur numérique passé en argument 
+
+```{r hw}
+print("Hello World!")
+```
+
+La fonction `cat` permet d'afficher plusieurs éléments , séparés par des virgules
+
+```{r cat}
+cat("Hello", "World", "!")
+```
+
+`cat` accepte des éléments de type différent. Ici , une chaîne de caractère, un nombre, le résultat d'une fonction et un booléen  :
+
+```{r catmix}
+cat("abc", 12.3, sqrt(49), TRUE)
+```
+
+
+
+# Déclarer une variable 
+
+Une variable se déclare avec l'opérateur `<-` (recommandé) ou `=` (déconseillé) .
+Écrire le nom de la variable sur une ligne renvoie la valeur courante de la variable.
+Si la ligne contient une opération ou l'appel d'une fonction, le résultat est affiché dans la console. 
+
+```{r decl}
+a <-  5
+a
+a + 10
+```
+
+
+## Types primitifs 
+
+Les types primitifs en R sont : `numeric` , `character` (string) , `logical` (booléen), et `factor`
+
+Voici des exemples d'instanciation:
+
+```{r decl2}
+nunu <-  12.5
+chacha <-  "Lorem Ipsum"
+lolo <-  FALSE
+fafa <-  factor(c("riri", "fifi", "loulou"))
+```
+
+
+
+# Vecteur 
+
+
+La fonction `vector` permet d'initialiser un vecteur d'une certaine longueur et d'un certain type atomique (`numeric`, `logical` , ou `character`)
+
+```{r vec}
+veve <- vector(mode="numeric", length= 10 )
+veve
+```
+
+Les opérations classiques appliquées à un vecteur sont «vectorisées», c'est-à-dire qu'elles sont appliquées terme à terme au vecteur .
+```{r vec2}
+veve + 15 
+```
+
+
+On peut également utiliser la fonction `c()` pour créer des collections en combinant des objets. Lorsqu'ils sont de type identique cela produit un vecteur 
+
+
+```{r vec3}
+coco <-  c(10,20,30,40,50,60,70,80,90)
+coco
+```
+
+
+## Modifier un élément
+
+Connaissant son **index** (= sa position dans le vecteur),  la modification de la valeur d'un élément  se fait à l'aide de l'opérateur d'affectation : 
+
+
+```{r vecmodif}
+coco
+coco[5] <-  10000
+coco
+```
+
+
+## Ajouter une élément
+
+
+On peut ajouter un élément à la fin d'un vecteur avec la fonction `c()` qui combine une valeur avec un objet et renvoie un élément de même type  que l'objet combiné (ici : un vecteur)
+
+
+```{r vecajout}
+c(coco, "3.1416")
+```
+
+
+
+## Supprimer un élément
+
+
+Supprimer un élément d'un vecteur se fait d'un façon particulière : en excluant l'élément avec un signe "moins" devant son index.
+
+```{r vecsupp}
+coco
+coco[-5] 
+# pour supprimer effectivement le cinquième élément , il faut mettre à jour la variable avec une affectation 
+coco <- coco[-5]
+```
+
+
+
+## Retrouver un élément par sa valeur
+
+On utilise la fonction `match`, qui renvoie le **premier** index auquel on trouve la valeur dans le vecteur.
+
+
+```{r vecfind}
+tortues_ninja <-  c("Leonardo", "Raphaël", "Donatello", "Michelangelo", "Donatello")
+match("Donatello", tortues_ninja )
+
+
+```
+
+Pour trouver **tous les emplacements** d'une valeur dans un vecteur, utiliser la fonction `which` appliquée à une expression booléenne.
+
+```{r vecfindall}
+tortues_ninja <-  c("Leonardo", "Raphaël", "Donatello", "Michelangelo", "Donatello")
+tortues_ninja == "Donatello"
+which(tortues_ninja == "Donatello")
+```
+
+Autrement dit, `which` donne la position des valeurs vraies dans un vecteur de booléens. 
+
+
+# Liste 
+
+On utilise la fonction `list()`  pour initialiser une liste : 
+
+```{r lili}
+lili <-  list(1,2,3) 
+lili
+```
+
+
+La fonction `list()` accepte des éléments de type différents : 
+
+```{r lili2}
+lili2 <- list("abc", 15==3*5, 12.3)
+lili2
+```
+
+Dans cet exemple , le troisième terme utilise l'opérateur d'égalité, `==` qui teste si les deux opérandes sont égaux. 
+
+
+Une liste peut être nommée , c'est à dire stocker un nom pour chaque élément qu'elle contient, avec la fonction `names()` qui, suivant son utilisation, renvoie ou affecte des noms aux éléments d'une liste 
+
+
+```{r lili3}
+# affection des noms 
+names(lili2) <- c("premier élement", "deuxième élément", "troisième élément")
+#affichage standard de la liste en console
+lili2
+#affichage des  noms
+names(lili2)
+```
+
+
+## Modifier un élément
+
+
+Pour modifier un élément, à un index donné, on utilise les **doubles crochets** et l'affectation :
+
+```{r lilimodif}
+lili2[[2]] <- "nouvelle valeur"
+lili2
+```
+
+
+
+
+## Ajouter des éléments 
+
+On peut ajouter un élément à la fin d'une liste avec la fonction `c()` qui combine une valeur avec un objet et renvoie un élément de même type  que l'objet (liste ou vecteur).
+
+```{r addelem}
+c(lili,4)
+```
+
+## Supprimer un élément
+
+
+Affecter la valeur `NULL` à un élément de la liste a pour effet de le supprimer. Supprimer un élément d'une liste a pour effet de réduire la taille de cette liste d'une unité et de "recoller les morceaux , comme le montre la séquence suivante : 
+
+```{r removeelem}
+lili <- list(1,2,3,4,5)
+lili[[3]] <-  NULL
+lili
+```
+
+Notez l'emploi des doubles crochets pour accéder à un élément de la liste, à la différence du crochet simple pour les vecteurs.
+
+
+## Retrouver un élément dans une list 
+
+Les fonctions `match` et `which` fonctionnent également sur les listes (cf. section 3.4).
+
+Dans l'exemple ci dessus, je crée une **liste nommée**, en nommant directement les éléments à la création. 
+
+```{r findelemlili}
+turtles_color <-  list(Leonardo="blue", Raphael="red", Donatello="purple", Michelangelo="orange")
+turtles_color
+match("orange", turtles_color)
+which(turtles_color == "red") 
+```
+
+NB: le résultat renvoyé par `which` est bien un **index** (donc un int), mais il est nommé.
+
+
+# Exercice \#1   
+
+1. Créer une liste de 3 éléments 
+2. Changer la valeur du deuxième élément de votre objet
+3. Affecter à la liste  les trois noms suivants : "A" , "B" et "C"
+4. Ajouter un élément à votre liste 
+5. Nommer cet élément ajouté
+6. Supprimer le troisième élément de cette liste
+7. Afficher la liste finale et sa longueur
+
+
+# (Optionnel) Matrices
+
+les matrices sont des tableaux à deux dimensions pour lesquels sont définies plusieurs fonctions de calcul matriciel.
+une matrice se définit par exemple avec la fonction `matrix()`, en renseignant le contenu de la matrice (argument `data`), et la dimension de celle-ci (arguments `nrow` et `ncol` qui donnennt respectivment le nombre de lignes et de colonnes).
+
+Si le nombre de valeurs est inférieur à la taille de la matrice, les valeurs sont **recyclées** , c'est à dire réutilisées jusqu'à tout remplir, comme le montre l'exemple ci-dessous :
+
+```{r matrix1}
+mama <-  matrix(data = c(1,2), nrow = 3, ncol=3)
+mama
+```
+
+## Éléments, vecteurs lignes et vecteurs colonnes
+
+On extrait les vecteurs d'une matrice à l'aide de l'**opérateur d'indexation** , en spécifiant les indices des lignes ou colonnes , entre crochets `[]`, séparés par une virgule.
+
+
+```{r matrix2}
+mama2 <-  matrix(data = 3:11, nrow = 3, ncol=3)
+mama2
+```
+
+Pour accéder à l'élément situé à la deuxième liogne et à la troisième colonne, on écrit : 
+
+```{r matrix3}
+mama2[2,3]
+```
+
+Pour accéder à toute une ligne ou toute une colonne , on laisse vide l'index de l'**autre dimension**  i.e. pour obtenir une ligne , on ne précise pas l'indice de la colonne , et pour avoir une colonne , on ne précise pas la ligne.
+
+
+Pour le obtenir le premier vecteur ligne: 
+
+```{r matrix4}
+mama2[1,] # première ligne
+```
+
+
+Pour le obtenir le troisième vecteur colonne   : 
+
+```{r matrix_get_col}
+mama2[,3] #troisième colonne
+```
+
+
+
+## Opérations matricielles
+
+
+La **transposée** d'une matrice s'obtient avec la fonction `t()` :
+
+
+```{r matrix_transpose}
+mama2
+t(mama2)
+```
+
+
+Le **produit matriciel** est obtenu avec l'opérateur binaire  `%*%` : 
+
+```{r matrix6}
+# nouvelle matrice
+valeurs_mama3 <-  seq(from=10, by=10, length.out=12  )
+mama3 <-  matrix(data = valeurs_mama3, nrow = 3, ncol = 4)
+mama3
+#produit matriciel
+mama2 %*% mama3
+```
+
+
+Pour une matrice carrée , le déterminant est obtenu avec la fonction `det()` ,  la décomposition en vecteurs propres avec la fonction `eigen()`,la diagonale s'obtient avec la fonction `diag()`
+
+
+
+
+## Opérations termes à termes 
+
+Les opérateurs arithmétiques ( `+,-,*,/,%`) classiques sont appliqués termes à terme aux élément de la matrice : 
+
+
+```{r matrix_identit}
+#
+matrice_Id <-  matrix(c(1,0,0,0,1,0,0,0,1), nrow=3)
+matrice_Id
+```
+
+
+
+```{r matrix_term_term}
+matrice_Id + 1 
+matrice_Id * 7
+```
+
+
+## Juxtaposer des matrices (ou des tableaux)
+
+Ces fonctions sont aussi valables pour les dataframe (voir plus bas) , sous réserve de compatibilité de types et de taille. 
+
+
+Pour juxtaposer verticalement deux matrices de même nombre de colonnes, on utilise la fonction `rbind` , qui lie les lignes (row bind)
+
+
+```{r mbind2}
+rbind(mama, mama2)
+```
+
+
+
+
+
+Pour juxtaposer horizontalement deux matrices de même nombre de lignes, on utilise la fonction `cbind`, qui lie les colonnes (column bind)
+
+```{r mbind}
+cbind(mama, mama2)
+```
+
+
+
+
+
+# Dataframes
+
+Le type d'objet le plus courant dans R est le **dataframe** :  un tableau de données dont les colonnes ont des noms et peuvent être de différents types. 
+Par convention, les variables qui décrivent la population des données sont en colonnes.
+
+
+R propose un jeu de données appelé `iris` décrivant les caractéristiques de fleurs de différentes espèces d'iris. Ici j'utilise la fonction `head()` pour limiter l'affichage aux six premières lignes : 
+
+```{r iris}
+head(iris)
+```
+
+les noms des colonnes d'un dataframe sont obtenus avec la fonction `names()`
+
+```{r irisnames}
+names(iris)
+```
+
+
+
+## Accès aux valeurs
+
+
+un dataframe est un tableau à deux dimensions, on peut donc accéder à la valeur d'un élément avec deux indices placés entre crochets et séparé par une virgule : celui de la ligne voulue puis celui de la colonne voulue, comme pour une matrice (cf. ci-dessus)
+
+```{r irisacces}
+iris[12, 4]
+```
+
+On peut également utiliser le nom d'une colonne pour indiquer la colonne désirée :
+
+
+```{r irisacces2}
+iris[12, "Petal.Width"]
+```
+
+
+### Toutes les lignes, toutes les colonnes
+
+Si on ne précise pas les indices i et j  dans l'expression `mydata[i,j]` , R sélectionne toutes les valeurs du dataframe `mydata`
+
+Pour accéder à toutes les lignes de la colonne `Petal.Width`, on écrit donc: 
+
+```{r irisacces3}
+iris[, "Petal.Width"]
+```
+
+Pour accéder à toutes les colonnes d'une ligne, on écrit : 
+
+```{r irisacce4}
+iris[12, ]
+```
+
+
+### Exclure des lignes ou des colonnes
+
+
+Pour exclure une ligne ou une colonne on procède comme pour l'accès, mais en utilisant le signe "moins" devant les **indices**  lignes ou les colonnes **à exclure** : 
+
+```{r irismoins}
+iris[, -c(3,4)]
+```
+
+Pour exclure des lignes , on procède de même. 
+Dans l'exemple ci-dessous, j'utilise l'opérateur `:` qui produit une séquence d'entiers entre les deux nombres qui l'entourent : 
+
+
+```{r irismoins2}
+iris[ -(10:150), ]
+```
+
+Comme le dataframe `iris` contient 150 lignes (pour le calculer , utiliser la fonction `nrow()`), et qu'on exclut les lignes d'indices 10 à 150 , on obtient les 9 premières lignes du dataframe.
+
+
+## L'opérateur `$`  
+
+
+Il est courant de vouloir opérer des transformations aux colonnes d'un dataframe. Pour cela, on peut utiliser l'opérateur `$` sur les objets de type dataframe :
+
+
+```{r irisdollar}
+iris$Species
+```
+
+
+les colonnes d'un dataframe sont des **vecteurs**, et tout ce que nous avons vu à leur sujet s'applique.
+
+
+par exemple les opérations arithmétiques s'appliquent :  
+
+
+```{r irisarithmétique}
+iris$Petal.Length * 100 
+```
+
+
+Pour calculer la valeur moyenne d'une colonne numérique du dataframe `iris`, on utilise fonction `mean()` directement sur la colonne voulue : 
+
+```{r irismean}
+mean(iris$Sepal.Width)
+```
+
+
+N.B. : les noms de colonnes d'un dataframe chargé en mémoire sont proposés à la complétion après le symbole dollar dans la console ou dans l'éditeur de Rstudio, ce qui est très pratique.
+
+
+## Filtrage :  Accès conditionnels 
+
+Lors de l'accès à des éléments d'un dataframe, on peut faire appliquer une condition booléenne pour ne sélectionner que les éléments qui remplissent cette condition. 
+
+Le motif général de la syntaxe est le suivant : 
+
+<span style="color: #0000CC">dataframe[ </span> <span style="color: #00dd00">conditions à appliquer sur les lignes</span>  <span style="color: #0000CC">,</span>  <span style="color: #FF7F00">colonnes désirées </span><span style="color: #0000CC">]</span>
+
+
+Voici comment sélectionner les valeurs de la variable `Sepal.Width` des individus du dataframe `iris` dont la variable `Species` vaut `virginica` . 
+
+
+```{r iriscondition}
+iris[iris$Species=="virginica","Sepal.Width"]
+```
+
+Voici les étapes qui mène à l'écriture de cette ligne :
+
+1. on détermine l'expression booléenne qui va tester si les lignes du tableau doivent être conservées.
+Ici, on veut les iris dont la variable `Species` vaut la chaîne de caractères `"virginica"`. On testera les valeurs avec l'opérateur d'égalité `==`
+
+2. Les valeurs de la colonne `Species` du dataframe s'obtiennent avec l'expression `iris$Species`, qui est un vecteur. 
+
+3. Le test terme à terme du vecteur s'écrit donc : `iris$Species=="virginica"`. Voici ce que donne ce test : 
+
+
+```{r iriscondition2}
+iris$Species=="virginica"
+```
+
+4. Avec ce test , nous avons , pour chaque individu du dataset `iris`, une valeur booléenne qui indique si l'individu est de l'espèce voulue. 
+
+5. On se sert de cette séquence de booléen comme  **index de lignes** dans l'accès aux valeurs, à l'intérieur des crochets : `iris[iris$Species=="virginica",]` . 
+
+6. Enfin , on indique le nom de la ou des  colonne(s)  voulue(s).
+
+6 bis . Si on désire conserver toutes les colonnes , on ne met rien derrière la virgule de l'expression `iris[CONDITION_BOOLEENE , ]`  , sinon on peut mettre la liste des colonnes voules.
+
+
+
+Toute expression booléenne peut servir à indexer les lignes d'un dataframe. 
+Pour combiner plusieurs expressions , les opérateurs logiques binaires `&`, et `|` , respectivement "AND" et "OR"; l'opérateur de négation (NOT) s'écrit `!`. 
+
+Voici comment on obtiendrait les iris dont l'espèce n'est pas `versicolor`, dont la Petal.Width ne dépasse pas 1.5 et dont la Sepal.Length est de 5.0 : 
+
+
+```{r iriscondition3}
+iris[iris$Species != "versicolor" & iris$Petal.Width <= 1.5  & iris$Sepal.Length == 5.0, ]
+```
+
+
+Si les critères sont nombreux, l'écriture des conditions booléennes qui sélectionnent les individus compatibles est plus difficile et peu lisible, il est plus sûr de procéder en plusieurs étapes et de stocker les objets intermédiaires, quitte à libérer la mémoire après le traitement (avec la fonction `rm()`)
+
+La prochaine section  montre une fonction pratique pour réaliser ces filtrages avec une syntaxe plus lisible.
+
+## Filtrage avec `dplyr`
+
+
+le package `dplyr` propose de nombreuses fonction très utiles , dont `filter()`.
+L'autre avantage de ce package est que l'on peut enchaîner les traitements grâce à l'opérateur ` %>% ` qui passe à la fonction à sa droite le résultat du traitement à sa gauche. Nous reviendrons plus tard sur ce package très versatile.
+
+Voici un exemple simple : 
+
+
+```{r irisdplyr}
+iris %>%  filter(Species =="versicolor") %>%  filter(Petal.Length>= 2) %>%  filter(Sepal.Width>3)
+```
+
+
+
+## Modifier une valeur
+
+La modification de valeurs se fait par une affectation à l'endroit voulu du tableau
+Ici nous allons d'abord créer une copie du dataframe `iris` pour pouvoir le modifier.
+Nous commençons par modifier la longueur Sepal.Length:
+
+```{r dfmodif}
+iriscopy <-  iris
+iriscopy[1, "Sepal.Length"] <-  11111.1111
+iriscopy[1,]
+```
+
+La modification de l'espèce d'un iris sera moins directe, elle est laissée en exercice (consulter la page de documentation des fonctions `factor` et `levels`)
+
+
+## Supprimer une valeur
+
+Pour supprimer une valeur il suffit de la remplacer par la valeur `NA` (signifiant "non attribué) . Cela n'aura **pas** popur effet de supprimer la ligne associée. 
+
+
+```{r dfdelete}
+iriscopy[1, "Sepal.Width"] <-  NA
+iriscopy[1,]
+```
+
+
+
+
+## Ajouter de nouvelles valeurs
+
+### Ajout de colonnes
+
+Ajouter une colonne à un dataframe se fait en déclarant une colonne à l'aide de l'opérateur `$` . on peut l'initialiser avec une valeur, elle sera répliquée pour toutes les lignes du tableau .
+
+
+```{r dfaddcol}
+iriscopy$color <- NA
+names(iriscopy)
+iriscopy$color <- "purple"
+iriscopy$color
+```
+
+### Ajout de ligne
+
+Pour ajouter une ligne, (et non pas la remplacer), deux solutions : 
+
+1. Ajouter la ligne à l'indice correpondant au nombre de lignes existantes + 1 
+2. Utiliser la fonction `rbind`
+
+
+```{r dfaddline}
+#affiche le nombre de ligne du dataframe
+nrow(iriscopy)
+iriscopy[151,] <- c(1,2,3,4,"versicolor", "purple")
+iriscopy[151,]
+```
+
+La fonction `rbind()` permet de fusionner deux dataframes "l'un au dessus de l'autre".
+il faut pour cela qu'ils aient **exactement** les mêmes colonnes (ordre, nombre et type).
+
+
+
+```{r dfaddline2}
+my_line <- c(8,8,8,8,"virginica", "blue")
+iriscopy <- rbind(iriscopy, my_line)
+iriscopy[151:152, ]
+```
+
+
+
+##  Opérations sur des vecteurs ou listes
+
+### Moyenne , médiane , écart-type
+
+Elles s'obtiennent  avec les fonction `mean()` , `median()` et `sd()`. 
+
+
+```{r irisagreg}
+mean(iris$Petal.Length)
+median(c(1,2,3,4,5,6))
+sd(rnorm(500))
+```
+
+
+### Somme et Produit
+
+Ils s'obtiennent avec les fonctions `sum` et `product` 
+
+```{r irisagreg2}
+sum(iris$Petal.Length)
+prod(c(1,2,3,4,5,6))
+```
+
+
+# Affichage simple 
+Dans les sections suivantes
+
+## Histogramme
+
+
+Toute série de valeurs numériques peut être affichée en histogramme.
+
+```{r histo}
+hist(iris$Sepal.Length)
+```
+
+## Nuage de points
+
+
+Pour tracer un nuage de points , il faut deux séries de valeurs de la même taille.
+Les colonnes d'un dataframe se prêtent très bien à l'exercice : 
+
+```{r plotex1}
+plot(iris$Sepal.Length, iris$Sepal.Width)
+```
+
+
+
+
+
+# Exercice #2
+
+
+0. Installer et  charger le jeu de données du package `palmerpenguins`
+
+```{r exo2setup, eval=FALSE}
+install.packages("palmerpenguins") # install le package (à faire une seule fois)
+library(palmerpenguins )  # charge le package 
+```
+
+Le jeu de données de ce package se nomme `penguins` 
+
+
+1. Quelles sont les variables de ce jeu de données ? 
+2. Quel est le poids moyens des pingouins  ? 
+3. Créer un dataframe qui ne contienne que les pingouins de l'espèce Gentoo 
+4. Quelle est le poids moyen d'un pingouin Gentoo ? 
+5. Sur quelle(s) île(s) trouve-t-on  les pingouins de l'espèce Adélie?
+6. Y-a-t' il des autres pingouins que des pingouins Adélie sur les îles déterminées à la question 5 ? 
+
+
+
+# Définir sa propre fonction 
+
+ Pour définir une fonction , la syntaxe est la suivante  : 
+ 
+ 
+```{r userfunc, eval=FALSE}
+my_func <- function(arg1, arg2, ⋯ ){
+     ⋮ 
+     ⋮ 
+  result =  ⋯ ⋯ 
+  return(result)
+}
+```
+
+
+
+Le code définissant la fonction doit être exécuté au moins une fois pour que la fonction puisse être appelée ailleurs.
+
+
+##  Exemple de fonction 
+
+Cette fonction renvoie le ou les indices des valeurs maximales d'une liste de nombres
+
+```{r userfunc22 }
+index_of_max <- function(my_list){
+  ind <- which(my_list==max(my_list))
+  return(ind)
+}
+
+lili <-  c(24,5,9,78,12,45,78,23,47,-75)
+index_of_max(lili)
+```
+
+
+
+  
+
+# Exercice #3
+
+1. Écrire une fonction qui prend en argument un vecteur de valeurs numériques et qui le centre et le réduit , c'est-à-dire qui soustrait à chaque valeur la moyenne du vecteur et qui divise par la valeur de l'écart-type . Vous pouvez tester votre fonction avec un vecteur initialisé par vos soins, un dataframe de votre choix ou le dataframe `iris`.
+
+
+2. Afficher l'histogramme du vecteur centré et réduit.
+
+
+Voici quelques façons alternatives  de générer des vecteurs: 
+(Reportez-vous à la documentation des fonctions pour en saisir le fonctionnement)
+
+```{r sequences}
+# répéter un motif 
+rep(c(1,5,10),10)
+# discrétiser un intervalle en précisant le quantum 
+seq(from= 25 , to = 250, by = 22 )
+# discrétiser un intervalle en précisant la longueur 
+seq(from= 25 , to = 250, length.out = 10 )
+# échantillonner une loi uniforme entre deux valeurs
+runif(25, min=  -15 , max = 8 )
+# échantilloner une loi normale de moyenne et d'écart-type donné 
+rnorm(25, m = 12 , sd = 2)
+```
+
+# Entrées/sorties : fichier CSV
+
+Nous ne traiterons ici que de la lecture de fichiers au format CSV.
+Des packages spécifiques existent pour interagir avec des bases de données, le format json et les feuilles MS Excel.
+
+
+## Lecture de fichier
+
+On vous fournit un fichier intitulé `pokemon.csv`. 
+Les fichiers de format CSV contiennent des données tabulaires : ils sont donc transformées en dataframe par R.  
+
+Pour le lire on peut utiliser la fonction de base `read.csv()`. En cas de fichier particulièrement gros (plusieurs centaines de mega-octets) on pourrait se tourner vers les fonctions `read_csv()` du package `data.table`, plus adaptées à ces volumes. 
+
+
+
+Pour lire un fichier , il faut être capable d'exprimer son **chemin d'accès** (path en anglais) dans le format adapté à votre système d'exploitation. 
+Reportez-vous à ce document [TODO trouver un lien] pour des précisions.
+
+
+
+
+
+```{r readcsv_hidden, eval=T, echo=F}
+pokemon_df  <-  read.csv("./pokemons.csv")
+```
+
+
+```{r readcsv, eval=F}
+pokemon_df  <-  read.csv("~/coursDESIGEO/pokemons.csv")
+str(pokemon_df)
+```
+
+L'appel de la fonction `read.csv` avec tous les arguments par défaut fonctionne correctement.
+La fonction `str()` nous donne la structure du dataframe : les noms et type de ses variables.
+
+La fonction `read.csv` , lorsque le fichier est bien constitué (pas de trous, nombre constant de colonnes, caractères exprimés dans un charset reconnu, etc...), "devine" le type des colonnes.
+
+
+Par défaut , les colonnes qui contiennent des chaînes de caractères sont traitées comme des **facteurs** (i.e. des variables modales, qui ne peuvent prendre qu'un nombre fini de valeurs).
+
+Pour changer ce comportement , il faut passer en argument à `read.csv()` l'argument `stringsAsFactors=FALSE` (cf la documentation de la fonction)
+
+Parfois, ce comportement de la fonction apr défaut est discutable.
+
+
+### Type des colonnes d'un fichier CSV 
+
+
+Ici par exemple , le nom des pokemons est considéré comme un facteur à ... 800 modalités (pour 800 individus)  : ce qui est peu pertinent, chaque nom étant a priori unique et propre à chaque individu de la population de pokemons ; par ailleurs  il est peu probable de devoir faire des regrouppements par nom.
+
+Au contraire, les facteurs  `Type.1` et `Type.2` sont des facteurs à respectivement 18 et 19 modalités, ce qui peut s'entendre , vu le nom de la variable, et le nombre de modalités significativement plus faibles que le nombre d'individus.
+
+
+Nous pouvons changer le type de la variable `Name` en utilisant la fonction `as.character()` sur la colonne du dataframe pour la remplacer.
+
+```{r readcsv2}
+pokemon_df$Name <-  as.character(pokemon_df$Name)
+```
+
+
+Autre problème : les valeurs de la variable `Legendary` sont reconnues comme des facteurs à deux modalités `"True"` et `"False"` alors que leurs valeurs sont clairement booléennes.
+
+La fonction `as.logical()` est capable de transformer automatiquement les valeurs `"T", "TRUE", "True", "true"` en la valeur `TRUE` du langage R (de meme pour les variations de la valeurs `False`)
+
+
+```{r readcsvFactorBool}
+pokemon_df$Legendary <-  as.logical(pokemon_df$Legendary)
+```
+
+
+Enfin , la colonne `X` ne semble pas receler d'informations très intéressantes, à votre avis d'où vient-elle ?  
+Peut-on la supprimer ? 
+
+```{r readcsvFactorBool2}
+str(pokemon_df)
+```
+
+
+
+
+## Écriture de fichier CSV
+
+
+L'écriture d'un dataframe dans le format CSV se fait avec la fonction  `write.csv()` , qui prend en argument un dataframe et un chemin d'accès vers un nouveau fichier : 
+
+
+```{r writeCSV, eval=FALSE}
+write.csv( iris, file = "/chemin/vers/repertoire/mon_fichier.csv")
+```
+
+
+De nombreuses options sont possibles : vous pouvez préciser le type de séparateur utilisé, le caractère de fin de ligne,  l'écriture des noms de colonnes etc...
+
+
+# Exercice #4 
+
+1. Récupérer les données 
+
+Récupérer le fichier `2020_LoL_esports_match_data_from_OraclesElixir_20210124.csv` sur le répertoire partagé de la formation.
+
+Il s'agit de résultats d'une compétition d'e-sport sur le  jeu  "Leagues of Legend", qui oppose deux équipes de 5 joueurs. La connaissance du jeu lui même n'est pas nécessaire pour répondre aux questions.^
+Une ligne contient les variables qui décrivent **un** match d'**un** joueur 
+
+Pour les questions suivantes, faites figurer dans un script R le code qui vous permet de réaliser les étapes suivantes :  
+
+2. Lire le fichier 
+
+
+3. Identifier le nombre de colonnes et de lignes du fichier 
+
+4. Quel est le type de la colonne `position`  et de la colonne  `dpm`  du jeu de données ? 
+
+5. Calculer la valeur moyenne de la colonne `totalgold`
+
+6. A partir du jeu de données initial, on vous demande de créer un second dataframe qui ne contienne que les données des joueurs qui ont perdu les  matchs de la compétition . Dans les données , c'est la colonne `result` qui porte cette information, la valeur `0` signifiant une défaite.   
+
+
+7. Sauvegarder le résultat dans un fichier que vous appelez "defeats.csv"
+
+
+
+
+8. Les données sur les matches contiennent une colonne `totalgold` (l'or gagné par les joueurs au courts d'un match) et une colonne `gamelength` qui indique la durée du match en secondes.  Créer une fonction qui calcule le nombre de d'unité de "gold" par minute à partir d'une durée en secondes et d'une quantité de `totalgold`. 
+
+
+9. Ajouter une colonne intitulée `gold_per_min`au dataframe, qui contienne la quantité de  `gold` obtenue par minute, calculée sur toutes les données à l'aide de votre fonction.
+
+10. Appliquer (et eventuellement adapter) la fonction créée en 8. sur les données de matches avec les colonnes `kills` et `gamelength`, et ajouter une colonne qui s'intitule `kill_per_min`.
+
+11. Tracer le nuage de points qui représente les deux variables nouvellement crées : `gold_per_min`et `kill_per_min`
+
+12. Optionnel : Envoyer  le code (si vous voulez une correction spécifique)
+
+
+
+
+Vous devriez obtenir à la question 8 un nuage qui ressemble à ceci : 
+
+
+```{r hint, echo=F, cache=TRUE}
+dflol <-  read.csv("./2020_LoL_esports_match_data_from_OraclesElixir_20210124.csv")
+plotdfx <- data.frame(goldpermin=dflol$totalgold  / (dflol$gamelength/60) , killpermin= dflol$kills  / (dflol$gamelength /60), result=factor(dflol$result, levels=c(1,0), labels = c("Victory", "Defeat")), position=dflol$position)
+library(ggplot2)
+ggplot(plotdfx)+
+  geom_point(aes(x=goldpermin, y = killpermin), size= .1)
+```
+
+
+# 'Programation' avec R
+
+Nous savons déjà comment définir une fonction , il nous reste à voir comment écrire les traitements conditionnels, et les boucles. 
+
+
+## Opérateurs logiques et de comparaisons
+
+$$\begin{array}{|c|c|c|c|}
+\hline
+!x& NON\ logique &< &inférieur\ à\\
+\hline
+x \& y &ET\ logique &> &supérieur\ à\\
+\hline
+x \&\& y & idem* &<=& inférieur\ ou\ égal\ à\\
+\hline
+x | y &OU\ logique &>=& supérieur\ ou\ égal\ à\\
+\hline
+x || y &idem* &==& égal\\
+\hline
+xor(x, y)& OU\ exclusif  &!=& différent\\
+\hline
+\end{array}$$
+
+* Les opérateurs `&` et `&&` diffèrent en réalité , consulter la documentation pour saisir la nuance . Dans le doute, utilisez toujours la **version courte** .
+
+## Bloc `if`
+
+Un bloc conditionnel s'écrit de la façon suivante : 
+
+```{r if1 , eval=F}
+if (condition) {
+  # code  éxécuté si condition vraie 
+}else{
+  # code si condition fausse
+}
+
+```
+
+
+La condition doit renvoyer une valeur **booléenne**, TRUE ou FALSE.
+
+Comme en C, il y a une tolérance avec les valeurs qui reviennent au même : 
+1 et 0 , "TRUE" et "FALSE" , "T" et "F". 
+
+
+### Variante `ifelse`
+
+
+Cette variante permet d'écrire une instruction conditionnelle sous une forme un peu plus compacte.
+
+```{r if2 , eval=F}
+ifelse(condition, valeur si vraie , valeur si fausse)
+```
+
+
+Voilà un exemple avec les penguins
+du package `palmerpenguins`, dont voici les variables :
+
+```{r if3 }
+library(palmerpenguins)
+names(penguins)
+```
+
+
+Nous allons tester si la masse de chaque pingouin est inférieure ou supérieure à la moyenne de tous les pingouins  du dataset : 
+
+```{r if4 , eval=FALSE, echo=TRUE}
+masse_moyenne <- mean(penguins$body_mass_g, na.rm = T)
+ifelse(penguins$body_mass_g < masse_moyenne, "plus léger" , "plus lourd")
+```
+
+Voici les 6 premières valeurs que retourne ce traitement conditionnel : 
+```{r if5 , eval=T, echo=F}
+masse_moyenne <- mean(penguins$body_mass_g, na.rm = T)
+ifelse(penguins$body_mass_g < masse_moyenne, "plus léger" , "plus lourd") %>% head
+```
+
+Notez l'effet de la valeur `NA`
+
+
+
+## Boucle `for`
+
+
+La boucle for s'écrit de la façon suivante : 
+
+```{r for1, eval=FALSE}
+for (variable in collection) {
+  #code éxécuté pour chaque élément de la collection 
+}
+```
+
+Par exemple , l'objet R `letters` contient tous les caractères alphabétiques ASCII en minuscules
+```{r for2}
+for (x in c(1,654,87,342,2,8,9)) {
+  print(x)
+}
+```
+
+
+
+
+
+### Sortie de boucle prématurée 
+
+pour interrompre une boucle for , on utilise le mot clé `break`
+
+
+```{r for_break, eval=T}
+for (x in c(1,2,3,4,5,6,7)) {
+  print(x)
+  if(x==4) {break}
+}
+
+```
+
+### Passer une itération
+
+
+Pour passer une itération sans interrompre la boucle , on utilise le mot clé `next`
+
+```{r for_next, eval=T}
+for (x in c(1,2,3,4,5,6,7)) {
+  if(x==3) {next}
+  print(x)
+}
+```
+
+
+
+## Boucle `while`
+
+
+
+La boucle `while` s'écrit de la façon suivante  :
+
+```{r while, eval=FALSE}
+while (condition) {
+  #code 
+}
+
+```
+
+## Applications vectorielles
+
+les application vectorielles sont des variantes des traitements itératifs (boucle `for`),en R elles sont plus efficaces. Elles s'apparentent à de la programmation fonctionnelle.  Les fonctions vectorielles de bases appliquent une fonction à tous les termes d'une collection ou d'une matrice. 
+Les fonctions de base se nomment  `sapply`, `lapply`, `vapply` pour traiter des vecteurs, et `apply`,`mapply` pour traiter des tableaux et des matrices.
+Consultez la documentation pour cerner les différences entre les fonctions de la famille.
+
+
+Nous donnons ici un exemple simple : 
+
+
+
+```{r apply, eval=F}
+my_vec <-  seq(from=10, to=100, by=5)
+
+my_func <- function(x){return(x+2)}
+sapply(my_vec, my_func)
+lapply(my_vec, my_func)
+```
+Notez la différence du résultat de `sapply` et `lapply` en terme de type.
+
+
+# (Optionnel) Exercice #5
+Implémentez en R le [crible d'ératosthène](https://fr.wikipedia.org/wiki/Crible_d%27%C3%89ratosth%C3%A8ne)
+
+
+Vous pouvez vous inspirer du pseudo code suivant :
+ ```{r,tidy=FALSE, eval=FALSE, highlight=FALSE  }
+ Fonction Eratosthène(Limite)
+    L = tableau de booléen de taille Limite, initialisé à Vrai
+    Mettre à Faux les cases d'indice pair > 2
+    L[1] = Faux
+    i=3
+    Tant que i*i≤Limite
+        Si L[i]
+            Pour j de i*i à Limite par pas de 2*i
+                L[j] = Faux
+            Fin pour
+        Fin si
+        i=i+1
+    Fin tant que
+    Retourner L
+Fin fonction
+ ```
+
+
+
+
+

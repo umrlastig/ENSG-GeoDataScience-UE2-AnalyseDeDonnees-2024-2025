@@ -1,0 +1,483 @@
+
+
+# Échauffement
+
+
+## Calcul de la moyenne d'un échantillon gaussien avec R 
+
+
+Comme vous le savez déjà , on calcule la moyenne d'un vecteur avec la fonction `mean` 
+
+
+```{r warmup}
+mean(c(3.14, 11.43, 2.7,1.414, 1.618))
+```
+
+
+R propose une fonction pour échantillonner dans une loi Normale la fonction `rnorm`.
+
+Les arguments sont dans l'ordre : 
+- `n` le nombre de valeurs souhaitées
+- `mean` , l'espérance de la variable 
+- `sd` , son écart-type (attention ! ce n'est pas la variance ! )
+
+```{r warmup2}
+my_sample <- rnorm(500, 10, 2 )
+head(my_sample)
+```
+
+La ligne de code suivante calcule la moyenne de l'échantillon : 
+
+
+
+```{r warmup3}
+mean(my_sample)
+```
+
+## Estimation de la moyenne d'échantillons de taille variable
+
+
+On va créer des échantillons dont la taille variera de  0 à 100 par pas de 1. On commence par créer les tailles à l'aide de la fonction `seq`  : 
+
+```{r warmup4}
+taille <-  seq(from=0, to= 100, by=1)
+```
+
+Pour chaque valeur de taille, on tire un échantillon dans la loi Normale (moyenne 0 et écart-type 1) de la taille correspondante, et on calcule sa moyenne, qu'on range dans une liste  : 
+
+
+```{r warmup5}
+moyenne <-  c()
+for (t in taille){
+  echantillon <- rnorm(t, 0,1 )
+  moyenne_courante <-  mean(echantillon)
+  moyenne <-  c(moyenne, moyenne_courante)
+}
+head(moyenne)
+```
+
+
+Pour faciliter l'affichage, on va joindre les valeurs des moyennes avec les tailles d'échantillons. 
+On utilise ensuite la fonction `plot`
+
+```{r warmup6, cache=T}
+df <-  data.frame(taille, moyenne)
+head(df)
+plot(df, type="l")
+```
+
+
+
+Comment interpréter ce graphique ? 
+Si la tendance ne vous apparaît pas clairement, augmentez la taille maximale d'échantillon.
+
+
+## Exercice 0 : somme d'échantillons tirés dans une loi normale 
+
+
+Si on considère deux échantillons tirés dans une loi normale de moyenne 0 et d'écart type 1 , quelle sera la moyenne de leur somme ? 
+la taille des échantillons a-t-elle une influence ?
+
+Vous pouvez mobiliser le code précédent pour appuyer votre réponse.
+
+
+## Exercice 0 bis : quotient d'échantillons tirés dans une loi normale
+
+
+Même question avec cette fois le quotient des deux échantillons.
+
+
+```{r warmup7, echo=F, eval=F}
+taille <-  seq(from=0, to= 500, by=1)
+moyennes1 <-  c()
+moyennes2 <-  c()
+
+for (t in tailles){
+  echantillon1 <- rnorm(t, 0,1 )
+  echantillon2 <- rnorm(t, 0,1 )
+  
+  moyenne_courante1 <-  mean(echantillon1)
+  moyenne_courante2 <-  mean(echantillon2)
+  
+  moyennes1 <-  c(moyennes1, moyenne_courante1)
+  moyennes2 <-  c(moyennes2, moyenne_courante2)
+}
+quotient <-  moyennes1/moyennes2
+
+df <-  data.frame(taille, quotient)
+df
+plot(df, type="l")
+
+
+```
+
+
+
+
+# Mise en place du TP2: bootstrap sur les Pokemons 
+
+
+Récupérer le fichier contenant les caractéristiques des pokemons  dans le répertoire partagé de la formation.
+
+Nous allons nous intéresser aux points de vie (variable `HP`) du jeu de données: 
+```{r datasetup}
+library(dplyr)
+library(ggplot2)
+pokedata <-  read.csv(file = "./pokemons.csv")
+fire_pokemons <- pokedata %>% filter(Type.1=="Fire")
+```
+
+
+# Echantilloner les données
+
+
+Pour faire un bootstrap, il faut réaliser de nombreux échantillons. 
+L'échantillonnage de valeurs se fait avec la fonction `sample`. La taille de l'échantillon est réglé par l'argument `size`.
+
+
+```{r sample1}
+one_random_pokemon <-  sample(pokedata$Name,size =  1)
+one_random_pokemon
+ten_random_pokemons <-  sample(pokedata$Name,size =  10)
+ten_random_pokemons
+```
+
+
+On peut également effectuer des tirages **avec remise** , avec l'argument `replace` mis à `TRUE`.
+
+
+
+```{r sample2}
+my_data <-  c("riri", "fifi", "zaza", "loulou")
+my_sample <-  sample(my_data, size=10, replace = T)
+my_sample
+```
+
+
+
+# Exercice 1 : Bootstrap sur la moyenne
+
+Le dataset des pokemons de type feu contient 52 individus.
+
+Coder une boucle qui réalise un certain nombre de fois  : 
+
+- l'échantillonnage (avec remise) de taille 52 parmi ces pokemons. 
+- le calcul de la moyenne de cet échantillon 
+- le stockage de la valeur moyenne dans un vecteur
+
+
+
+```{r meanboot, echo=F}
+nb_tirages <-  1000
+means <-  vector(mode="numeric", length = nb_tirages)
+for( i in  1: nb_tirages ){
+  spl <-  sample(fire_pokemons$HP, size = 52, replace = T)
+  means[i] <-  mean(spl)
+}
+```
+
+Afficher l'histogramme des moyennes estimées.
+Il devrait ressembler à ceci : 
+
+
+```{r hist_mean, echo=T}
+hist(means, breaks= 50)
+```
+
+# Intervalle de confiance
+
+## Calcul "à la main" de l'intervalle de confiance 
+En considérant que la distribution des moyennes observée est gaussienne, calculer l'intervalle de confiance à 95%.
+
+On rappelle que : 
+$\bigg[ \overline{x}- \sigma(X) ; \overline{x}+ \sigma(X) \bigg]$ est un intervalle de confiance à $\approx$ 68% (il capture 68% d'une distribution gaussienne)
+
+$\bigg[ \overline{x}- 2\sigma(X) ; \overline{x}+ 2\sigma(X) \bigg]$ est un intervalle de confiance à $\approx$ 95% (il capture 95% d'une distribution gaussienne)
+
+
+$\bigg[ \overline{x}- 3\sigma(X) ; \overline{x}+ 3\sigma(X) \bigg]$ est un intervalle de confiance à $\approx$ 99.7% (il capture 99.7% d'une distribution gaussienne)
+
+
+avec $\overline{x}$ la moyenne des moyennes des échantillons , et $X$ les moyennes des échantillons.
+
+
+```{r meanIC, echo=F, eval=F}
+moy <-  means %>%  mean
+sigm <-  sd(means)
+borne_inf <-  moy - (2*sigm)
+borne_sup <-  moy + (2*sigm)
+cat("[", borne_inf,";", borne_sup,"]")
+```
+
+
+
+## Calcul direct de l'intervalle de confiance avec la fonction `t.test()`
+
+la fonction `t.test` permet (entre autres)) de calculer l'intervalle de confiance, et éventuellement de préciser le niveau de confiance voulu, de la moyenne d'une variable.
+
+
+```{r meanICttest}
+t.test(fire_pokemons$HP, conf.level=0.95)
+```
+
+
+## Calcul direct de l'intervalle de confiance avec les quantiles
+
+
+Toujours sous l'hypothèse que la distribution est symétrique, on peut également demander les quantiles à 2.5% et 97.5% de façon à obtenir les valeurs qui délimitent 95% des valeurs prises par les moyennes calculées par bootstrap :
+
+```{r meanICquantiles , echo=F}
+quantile(means, probs=c(0.025, 0.975))
+```
+ 
+
+
+## Calcul direct de l'intervalle de confiance avec la distribution cumulée.
+
+
+Enfin , on peut utiliser la  fonction de répartition empirique `ecdf`, dont voici l'affichage :
+
+
+```{r ecdf }
+plot(ecdf(means))
+```
+
+
+Pour trouver l'intervalle de confiance , il nous faut trouver les valeurs des moyennes calculées sur les échantillons (x dans le graphique ci-dessus) qui définissent un intervalle contenant 95% de la distribution empirique cumulée, soit ici les valeurs entre  2.5% et de 97.5% de la valeur cumulée $F_n(x)$  (en y dans le graphique ci-dessus)
+
+Il faut noter que cette méthode, à la différence de celles des quantiles, **ne suppose pas** que la distribution des valeurs est symétrique. 
+
+
+En R, la fonction qui donne la distribution cumulée d'une variable est la fonction `ecdf` . 
+Le résultat de cette fonction est lui même une fonction. Pour connaître la valeur de la distribution  cumulée au point x, on appelle directement la fonction renvoyée par la fonction `ecdf` sur une valeur numérique comme dans l'exemple ci-dessous: 
+
+
+
+```{r IC_manual_lower, echo=T }
+ecdf(means)(64.73)
+```
+
+
+```{r IC_manual_upper, echo=F }
+ecdf(means)(75.27)
+```
+
+
+
+On procède ensuite par tâtonnement : ici, en lisant sur le graphique, on se doute que la valeur de x (ici x correspond aux moyennes calculées dans les échantillons)  correspondant à une proportion de 0.025 se trouve entre x=62 et x= 65, on peut tâtonner dans la console en ajustant à la main la valeur de x, jusqu'à trouver une valeur proche des 2.5% attendus.  
+
+
+# Exercice : Calculer la fonction de répartition  empirique 
+
+Écrire une fonction qui calcule , à partir d'un vecteur de valeurs numériques $v$, la fonction de répartition empirique $v$.
+Idéalement, donner le résultat sous la forme d'un dataframe contenant le vecteur $v$ trié par ordre croissant et les valeurs de la fonction de répartition correspondantes.
+
+
+La fonction de répartition empirique est une fonction qui, pour un vecteur de valeurs numériques $v$, donne pour chaque valeur $v_i$ la probabilité dans $v$ d'avoir une valeur inférieur ou égale à $v_i$.
+
+## Exemple simple 
+
+Prenons un exemple simple : 10 nombres aléatoires échantillonnés selon une loi uniforme entre 5 et 10 : 
+
+
+
+```{r ecdf_function_tuto }
+set.seed(42)
+nbrs <-  runif(10, min=5, max= 10)
+nbrs
+```
+
+
+Tri (ordre croissant) : 
+
+```{r ecdf_function_tuto_2, echo=T }
+nbrs <-  sort(nbrs)
+nbrs
+```
+
+Ici les 10 nombres sont tous distincts, leur probabilité dans le vecteur est de $\frac{1}{n}$.
+
+
+Prenons une valeur au hasard dans le domaine de définition de nos nombres : $[5;10]$ par exemple **8.5**. 
+
+Comptons combien de nombre dans notre échantillons `nbrs` sont inférieurs ou égaux à cette valeur, avec la fonction `sum`, qui lorsque qu'elle traite des vecteur de booléens, compte le nombre de valeurs vraies:
+
+```{r ecdf_function_tuto_3, echo=T }
+sum(nbrs <= 8.5 )
+```
+Nous avons 5 valeurs inférieurs à 8.5, soit la moitié de notre échantillon.
+Autrement dit , dans notre échantillon, il y a $\frac{5}{10}= 50\%$ de valeurs inférieurs à 8.5.
+
+Le calcul simple que nous venons de réaliser est celui de la **fonction empirique de répartition** pour la valeur 8.5. Cet exemple avec 8.5 se généralise aisément  à toute valeur appartenant à $[5;10]$.
+
+
+La fonction de répartition empirique est la fonction qui nous donnera, pour un échantillon donné, la proportion de l'échantillon **inférieures ou égales** à toute valeur de l'espace de définition de l'échantillon.
+
+
+
+
+## Indices
+
+la fonction `cumsum` et la fonction `sum` vous seront  utiles.
+
+
+
+
+
+
+```{r ecdf_function, echo=F }
+cumulated_proportion <- function(v){
+  values <- v 
+  ecd <- cumsum(v) /sum(v)
+  result <-  dataframe(values, ecd)
+  return(result)
+}
+```
+
+
+
+
+# Exercice :  sensibilité aux paramètres du bootstrap
+
+
+
+Lors d'un bootstrap, rien n'interdit d'échantillonner "plus grand" que les données (et même plus petit) , puisqu'on effectue des tirages **avec remise**. 
+
+Pour autant, il n'existe pas de règle simple qui fixe la taille de l'échantillon, ni le nombre d'échantillons à prendre.
+Nous allons répliquer le bootstrap en variant le nombre et les tailles d'échantillons, et d'observer la variation des estimateur et de leurs intervalles de confiances, pour en saisir l'influence. 
+
+
+**Attention** , il ne faut pas (trop) faire varier la taille de l'échantillon au delà de la taille de la population de base, car cela donnerait des tendances trompeuses, puisque calculées sur une population "répétée", introduisant des régularités qui n'ont pas forcément lieu d'être.
+
+
+ 1. Encapsuler la boucle de bootstrap précédente dans une fonction qui prend deux arguments : le nombre de répétitions et la taille de l'échantillon.
+
+ 2. Faire varier :
+      - le nombre de tirages bootstrap  dans un intervalle de $[50% ; 400%]$ de sa valeur, discrétisé en 50 valeurs.
+      - la taille de l'échantillon dans un intervalle de $[50% ; 100%]$ de sa valeur, discrétisé en 50 valeurs.
+Puis, pour chaque couple de valeurs : 
+
+ 3. Afficher la taille de l'intervalle de confiance à 95% en fonction des deux arguments, vous pouvez utiliser les méthodes de votre choix pour calculer cet intervalle de confiance, nous supposerons que les distributions des moyennes sont symétriques. 
+
+
+```{r SAn, echo=F, eval=T, cache=T}
+nb_tirages <-  1000
+bootstrap <- function (nb_tirages, taille_ech){
+means <-  vector(mode="numeric", length = nb_tirages)
+for( i in  1: nb_tirages ){
+  spl <-  sample(fire_pokemons$HP, size = taille_ech, replace = T)
+  means[i] <-  mean(spl)
+}
+return(means)
+}
+
+
+# intervalle de variation des paramètres du bootstrap 
+variation_nb_tir <- round(seq(from= 0.5*nb_tirages, to= 4*nb_tirages, length.out= 50 ))
+variation_spl_size  <- round(seq(from= 0.5*(length(fire_pokemons$HP)), to= 1*(length(fire_pokemons$HP)), length.out= 50 ))
+
+
+# dataframe vide pour contenir les resultats à chaque itération 
+resultats_SA <-  data.frame(nb_tirages= numeric(), taille_echantillon= numeric(), moyenne= numeric(), longueurIC=numeric())
+
+
+for (nt in variation_nb_tir) {
+  for (s in variation_spl_size)
+  {
+    means_btstrp <- bootstrap(nt, s)
+    IC_length <- quantile(means_btstrp, c(0.025, 0.975))[2] - quantile(means_btstrp, c(0.025, 0.975))[1]
+    estim_mean <-  mean(means_btstrp)
+    
+    # création de la ligne de résultat
+    result_line <- c(nt, s, estim_mean, IC_length)
+    names(result_line) <- c("nb_tirages", "taille_echantillon", "moyenne", "longueurIC")
+    resultats_SA <- rbind(resultats_SA, result_line) # empile la ligne de résultat courant dans le dataset Resultat
+  }
+}
+
+names(resultats_SA) <-  c("nb_tirages", "taille_echantillon", "moyenne", "longueurIC")
+
+```
+
+## Exercice: Interprétation des résultats de l'étude  de sensibilité 
+
+Commenter les graphiques obtenus (les vôtres où  ceux donnés ci-dessous).
+Quel est l'effet le plus notable des deux paramètres du bootstrap ?
+
+```{r SA_plot}
+
+pnt <-  ggplot(resultats_SA, aes(x=nb_tirages, y=moyenne ))+
+   geom_boxplot(aes(group=nb_tirages))
+
+pnt
+
+
+pss <-  ggplot(resultats_SA, aes(x=taille_echantillon, y=moyenne- mean(fire_pokemons$HP)  ))+
+  geom_boxplot(aes(group=taille_echantillon))
+pss
+
+pntlIC <-  ggplot(resultats_SA, aes(x=nb_tirages, y=longueurIC ))+
+   geom_boxplot(aes(group=nb_tirages))
+
+pntlIC
+
+
+psslIC <-  ggplot(resultats_SA, aes(x=taille_echantillon, y=longueurIC ))+
+  geom_boxplot(aes(group=taille_echantillon))
+psslIC
+
+
+
+
+pssnt <-  ggplot(resultats_SA, aes(x=taille_echantillon, y=nb_tirages ))+
+  geom_point(aes(color=longueurIC))
+pssnt
+
+
+pssnt2 <-  ggplot(resultats_SA, aes(x=taille_echantillon, y=nb_tirages ))+
+  geom_point(aes(color=moyenne))
+pssnt2
+
+```
+
+
+# Exercice : Autres bootstraps 
+
+
+Nous avons réalisé l'estimation et le calcul d'intervalle de confiance de la moyenne des points de vie (variable `HP`) des pokemons de type feu.
+Recommencer la procédure  avec une autre variable et/ou une autre catégorie de pokemons.
+
+# Exercice Bootstrap sur une corrélation 
+
+On dispose des données d'attaque et de défense des pokemons. 
+
+Voici l'allure du nuage de points pour tous les pokemons, colorés par génération.
+
+
+```{r AttbsDefbyGenplot}
+
+pokedata$Generation <-  as.factor(pokedata$Generation)
+ggplot(pokedata)+
+  geom_point(aes(x=Attack, y =Defense, color= Generation))
+```
+
+
+la correlation entre ces deux variables peut être obtenues directement par R , avec la fonction `cor`
+
+
+```{r Att.vs.Def.byGenCor}
+cor(pokedata$Attack, pokedata$Defense)
+```
+
+Réaliser un bootstrap pour encadrer cette valeur de corrélation en échantillonnant dans toute la population.
+
+L'intervalle obtenu varie-t-il en fonction de la génération des pokemons ? 
+
+
+
+# Exercice : pokemons légendaires
+
+Élaborer une suite de tests qui réponde à la question suivante : la prise en compte de pokémons légendaires a-t-elle une influence dans le calcul des moyennes et des intervalles de confiance d'une variable numérique (au choix) des pokemons ?
+
+
+
