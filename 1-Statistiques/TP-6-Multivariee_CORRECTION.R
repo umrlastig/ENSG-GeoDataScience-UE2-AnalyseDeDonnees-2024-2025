@@ -179,10 +179,64 @@ summary(granger_full_logit_result_at_40)
 #######################
 
 # Prendre en main les méthodes t-SNE (package Rtsne) et UMAP (package umap)
+library(Rtsne)
+library(umap)
+
+library(palmerpenguins)
+data("penguins")
+
+dataPenguins = (penguins %>% na.omit() %>% dplyr::select(where(is.numeric)) %>% dplyr::select(-year))
+
+tsnePenguins = Rtsne(dataPenguins)
+tsnePenguinsCoords = data.frame(tsnePenguins$Y)
+names(tsnePenguinsCoords) = c("X1","X2")
+
+umapPenguins = umap(dataPenguins)
+umapPenguinsCoords = data.frame(umapPenguins$layout)
+
+pcaPenguins = prcomp(dataPenguins,scale. = T)
+pcaPenguinsCoords = data.frame(pcaPenguins$x[,1:2])
+
+
+# Comparer PCA, t-SNE, et UMAP avec leur projections dans l'espace 2D
+ggplot(data = cbind(tsnePenguinsCoords,species = (penguins%>% na.omit())$species))+
+  geom_point(aes(x= X1, y=X2, color=species))
+
+ggplot(data = cbind(umapPenguinsCoords,species = (penguins%>% na.omit())$species))+
+  geom_point(aes(x= X1, y=X2, color=species))
+
+ggplot(data = cbind(pcaPenguinsCoords,species = (penguins%>% na.omit())$species))+
+  geom_point(aes(x= PC1, y=PC2, color=species))
 
 
 
-# Comparer PCA, t-SNE, et UMAP sur un ensemble de variables quantitatives (joueurs et/ou équipes)
+# Sur un ensemble de variables quantitatives avec les données LOL (joueurs et/ou équipes)
+
+d_lol_reduc = d[,-(16:17)]
+
+tsneLol = Rtsne(d_lol_reduc)
+tsneLolCoords = data.frame(tsneLol$Y)
+names(tsneLolCoords) = c("X1","X2")
+
+umapLol = umap(d_lol_reduc)
+umapLolCoords = data.frame(umapLol$layout)
+
+pcaLol = prcomp(d_lol_reduc,scale. = T)
+pcaLolCoords = data.frame(pcaLol$x[,1:2])
+
+ggplot(data = cbind(tsneLolCoords,result = d_lol_reduc$result))+
+  geom_point(aes(x= X1, y=X2, color=result))
+
+ggplot(data = cbind(umapLolCoords,result = d_lol_reduc$result))+
+  geom_point(aes(x= X1, y=X2, color=result))
+
+ggplot(data = cbind(pcaLolCoords,result = d_lol_reduc$result))+
+  geom_point(aes(x= PC1, y=PC2, color=result))
+
+
+
+
+
 
 
 
