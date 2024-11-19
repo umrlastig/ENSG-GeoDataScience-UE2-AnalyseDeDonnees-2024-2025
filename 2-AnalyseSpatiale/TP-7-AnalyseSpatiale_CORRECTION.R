@@ -101,7 +101,8 @@ library(ICSNP)
 
 
 #  (difficile) - point median "pondéré" ?
-#  -> utiliser une technique type bootstrap en générant des points synthétiques en quantité proportionelle aux populations
+#  -> utiliser une technique type bootstrap en générant des points synthétiques
+#    en quantité proportionelle aux populations
 
 
 
@@ -111,7 +112,7 @@ library(ICSNP)
 #  2 ) Analyse d'un semis de points: 
 
 
-# 2.1) Charger les données d'OpenStreetMap:
+# 2.1) Charger les données d'OpenStreetMap :
 #  * données gpkg
 #  * fichiers disponibles: data/osmdata/
 #   c("Architecte.gpkg","Courtier_immobilier.gpkg","Hôtels.gpkg",
@@ -127,21 +128,38 @@ library(sf)
 coiffeurs = st_read("data/osmdata/Salon_de_coiffure.gpkg")
 facs = st_read("data/osmdata/Enseignement_Supérieur.gpkg")
 
-st_read(dsn = 'data/regions/',layer = 'regions_2015_metropole_region')
+regions = st_read(dsn = 'data/regions/',layer = 'regions_2015_metropole_region')
+departements = st_read(dsn='data/departements/',layer='DEPARTEMENT')
+# fonction alternative : read_sf
 
 # - systeme de coordonnees?
-
+st_crs(coiffeurs)
+st_crs(departements)
 
 #  - reprojection vers "EPSG:2154"
+coiffeurs <- st_transform(coiffeurs,st_crs(departements))
+# fonctionne aussi : juste le numero EPSG st_transform(coiffeurs,2154)
+facs <- st_transform(facs,st_crs(departements))
 
 
-
-# 2.2) Calculer l'indice de plus proche voisin dans le cas d'un faible nombre de points (universités par exemple)
-
+# 2.2) Calculer l'indice de plus proche voisin dans le cas d'un faible nombre de points
+#      (universités par exemple)
+distancefacs = st_distance(facs)
+diag(distancefacs) = NA
+distancemin <- apply(distancefacs,MARGIN = 1,function(row){min(row,na.rm=T)})
+nndindex = 2*sqrt(nrow(facs)/sum(st_area(departements)))*mean(distancemin)
 
 
 # 2.3) Cartographier la densité des points
 
+library(ggplot2)
+
+coiffeursmetro = st_filter(coiffeurs,departements)
+g=ggplot(departements)
+g+geom_sf()+geom_density2d_filled(
+  data=data.frame(st_coordinates(coiffeursmetro)),
+  mapping=aes(x=X,y=Y),alpha=0.5
+)
 
 
 # 2.4) Charger le recensement 2017 au niveau départemental (niveau d'agrégation pour l'analyse statistique)
@@ -157,16 +175,28 @@ popdeps = read_delim('data/insee/Departements.csv', delim=";")
 deps = read_sf(dsn='data/departements/',layer='DEPARTEMENT')
 
 # - jointure
+deps = left_join(deps,popdeps[,c("CODDEP","PTOT")],by = c("CODE_DEPT"="CODDEP"))
 
 
-# 2.5) Corréler les effectifs à la population
+# 2.5) Corréler les effectifs d'un nuage de point aggrégé à la population
 
+joincoiffeurs = st_join(coiffeursmetro, deps)
+aggrcoiffeurs = joincoiffeurs %>% group_by(CODE_DEPT) %>%
+  summarise(numcoiffeur = n(), population = PTOT[1])
 
-
-
+cor.test(aggrcoiffeurs$numcoiffeur,aggrcoiffeurs$population)
+cor.test(aggrcoiffeurs$numcoiffeur,aggrcoiffeurs$population,method = "spearman")
 
 # -  joindre les resultats au sf departements
+deps = left_join(deps,as_tibble(aggrcoiffeurs[,c("CODE_DEPT","numcoiffeur")]))
 
+# - cartographier : package mapsf 
+library(mapsf)
+
+mf_map(x = deps, var = "numcoiffeur", type = "choro")
+
+mf_map(deps)
+mf_map(x = deps, var = "numcoiffeur", type = "prop")
 
 
 # 2.6) Calculer des indices de concentration
@@ -181,16 +211,41 @@ activityfiles = c(archi="Architecte.gpkg",immo="Courtier_immobilier.gpkg",hotel=
                   comptable= "Comptable.gpkg",geometre="Géomètre.gpkg")
 
 
+aggregate_activity <- function(activitename,locfiles=activityfiles,locdeps=deps){
+  activite = st_transform(st_read(paste0("data/osmdata/",locfiles[[activitename]])),st_crs(locdeps))
+  aggractivite = st_join(activite, locdeps) %>% group_by(CODE_DEPT) %>% summarise(num = n())
+  aggractivite[[activitename]] = aggractivite$num
+  return(left_join(locdeps,as_tibble(aggractivite)[,c("CODE_DEPT",activitename)],by=c("CODE_DEPT"="CODE_DEPT")))
+}
+
+
+for(activitename in names(activityfiles)){
+  show(activitename)
+  deps = aggregate_activity(activitename)
+}
+
+specialisation <- function(departements,activites,activitespec){
+  counts = as_tibble(departements)[,activites]
+  counts[is.na(counts)]=0
+  localshare = counts[,activitespec] / rowSums(counts)
+  globalShare = sum(counts[,activitespec])/sum(counts)
+  return(localshare/globalShare)
+}
 
 
 #  - specialisation en ens sup parmi education
+deps$specfac = specialisation(deps,c("ecole","lycee","maternelle","primaire","college","enssup"),"enssup")[[1]]
+
+# - avocats parmi prof liberales
+deps$specavocat = specialisation(deps,c("archi","immo","avocats","notaires","comptable","geometre"),"avocats")[[1]]
 
 
-# - prof liberales
 
 # - cartographie
+mf_map(x = deps, var = "specfac", type = "choro")
 
-library(mapsf)
+mf_map(x = deps, var = "specavocat", type = "choro")
+
 
 
 # 2.7) Calculer l'autocorrélation spatiale
@@ -200,9 +255,24 @@ library(mapsf)
 #  - Moran avec le package spdep, fonction moran.test
 library(spdep)
 
+depsnb = spdep::poly2nb(deps)
+w = spdep::nb2listw(depsnb)
+
+moran.test(deps$numcoiffeur, listw = w)
+
 # - indice de geary
+geary.test(deps$numcoiffeur,w)
 
 
 # - indice de Moran local (LISA)
+localmoran_coiff = localmoran(deps$coiffeur,w)
+
+deps$localmoran_coiff = localmoran_coiff[,c("Ii")]
+mf_map(deps, var="localmoran_coiff", type="choro")
+
+deps$categ = attr(loccoiff,"quadr")$mean
+mf_map(deps,var="categ",type= "typo",pal=c("blue","pink","lightblue","red"))
+
+
 
 
