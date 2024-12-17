@@ -170,6 +170,16 @@ balancedAccuracy<-function(model){
 }
 balancedAccuracy(logitfull_result)
 
+# More advanced methods:
+# https://stats.stackexchange.com/questions/235808/binary-classification-with-strongly-unbalanced-classes
+
+# ROC curve to get the best threshold for logit model
+library(pROC)
+d$proba = predict(logitfull_result,type=c("response"))
+roclogit <- roc(result~proba,data=d) 
+plot(roclogit)
+coords(roclogit,"best")
+
 
 #######################
 # 2) Séries temporelles
