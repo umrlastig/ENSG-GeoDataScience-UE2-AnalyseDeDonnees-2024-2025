@@ -304,25 +304,25 @@ library(ggplot2)
 
 
 # routes principales pour Paris
-
-
+bb <- getbb('paris fr', format_out = 'polygon')
+roads <- opq(bbox = bb, timeout = 200) %>%
+  add_osm_feature(key='highway',value='primary') %>% osmdata_sf()
 
 # visualiser
-
+ggplot()+geom_sf(data=roads$osm_lines)
+#+geom_sf(data=roads$osm_polygons,color='red')
 
 # exporter en shapefile
-
+st_write(roads$osm_lines,dsn = 'roads.gpkg',layer='roads')
 
 # restaurants pour Paris
-
+restaurants <- opq(bbox = bb, timeout = 200) %>%
+  add_osm_feature(key='amenity',value='restaurant') %>% osmdata_sf()
+ggplot()+geom_sf(data=restaurants$osm_points)+geom_sf(data=restaurants$osm_polygons,color='red')
 
 
 # exporter les routes en sp (pour utilisation avec des packages non compatibles avec sf)
-
-
-
-# exporter les routes en sf
-
+#  %>% osmdata_sp()
 
 
 # transformer les donnees brutes en graphe igraph pour calculer des temps de parcours
@@ -334,32 +334,58 @@ source('https://raw.githubusercontent.com/JusteRaimbault/TransportationNetwork/m
 
 # Ajouter une seule couche de transport pour construire un réseau routier
 #  (pour le snapping = aggregation des noeuds, ici les donnees ne sont pas projetees, on aggrege a 100m ~ 0.001)
+g <- addTransportationLayer(link_layer = roads$osm_lines, snap = 0.0005)
 
-
+plot(g, vertex.size=0, vertex.label=NA)
 
 
 # plot d'un plus court chemin aleatoire (vitesse constante = 1 -> a adapter a une vitesse reelle)
-
-
+path = shortest_paths(g,
+                      from = sample.int(vcount(g),1),
+                      to = sample.int(vcount(g),1),
+                      weights = 1/E(g)$length
+                      )
+plot(g, vertex.size=2, vertex.label=NA,
+     vertex.color = ifelse(V(g)%in%path$vpath[[1]],'red', 'black')
+)
 
 
 # Tester avec le réseau de métro/train (utilisation de l'argument "station")
+metro_data <- opq(bbox = bb, timeout = 200) %>%
+  add_osm_feature(key='route',value='subway') %>% osmdata_sf()
+stations_data <-opq(bbox = st_bbox(metro_data$osm_lines), timeout = 200) %>%
+  add_osm_feature(key='station',value='subway') %>% osmdata_sf()
 
-
+g_metro <- addTransportationLayer(link_layer = metro_data$osm_lines,
+                                  stations_layer = stations_data$osm_points,
+                                  snap = 0.0005)
+plot(g_metro, vertex.size=ifelse(V(g_metro)$station,5,0)
+     , vertex.label=NA, vertex.color=ifelse(V(g_metro)$station,'red','black'))
 
 
 # Ajouter une couche administrative (connecte les centroides des zones au noeud le plus proche)
+mairies_data <-opq(bbox = st_bbox(metro_data$osm_lines), timeout = 200) %>%
+  add_osm_feature(key='amenity',value='townhall') %>% osmdata_sf()
+plot(mairies_data$osm_points$geometry)
+g_full <- addAdministrativeLayer(g_metro,
+                                 admin_layer = mairies_data$osm_points,
+                                 attributes = list(),
+                                 empty_graph_heuristic=F
+                                 )
+plot(g_full, vertex.size=ifelse(V(g_metro)$station,5,0)
+     , vertex.label=NA, vertex.color=ifelse(V(g_metro)$station,'red','black'))
+# TODO to fix
 
 
-# Calculer des accessibilités en termes de temps de trajet
-
+# Calculer des accessibilités en termes de temps de trajet -> matrice de distance
+distances(g_metro,v=V(g_metro)$station==1,to=V(g_metro)$station==1,weights = 1/E(g_metro)$length)
 
 
 # Pour aller plus loin :
 # - calcul des accessibilités aux aménités
 # - utilisation des paramètres du modèle gravitaire
 # - scenario : taxe sur l'essence, impact sur l'accessibilité
-
+# - package r5r
 
 
 
