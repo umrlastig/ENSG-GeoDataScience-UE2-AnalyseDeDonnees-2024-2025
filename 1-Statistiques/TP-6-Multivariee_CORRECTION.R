@@ -145,6 +145,21 @@ logitmfx(formula = result ~ dpm + totalgold, data = d)
 
 
 
+# Performance du logit
+
+# McFadden R2
+1 - logLik(logitfull_result) / logLik(glm(formula = result~1 , data = d, family = binomial(link = 'logit')))
+
+# https://stats.stackexchange.com/questions/82105/mcfaddens-pseudo-r2-interpretation -> pas le meilleur indicateur de la performance
+# -> utiliser l'accuracy = (True positives + True negatives) / N
+
+accuracy<- function(model){
+  length(which(ifelse(fitted(model)>0.5,1,0)==d$result))/length(fitted(model))
+}
+
+accuracy(logitfull_result)
+
+
 #######################
 # 2) Séries temporelles
 #######################
