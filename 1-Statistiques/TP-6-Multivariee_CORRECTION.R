@@ -159,6 +159,17 @@ accuracy<- function(model){
 
 accuracy(logitfull_result)
 
+# in the case of unbalanced samples, accuracy is not the best measure -> look at the rest of the confusion matrix (precision, recall, F1-score)
+# https://en.wikipedia.org/wiki/Precision_and_recall#Imbalanced_data -> balanced accuracy
+
+balancedAccuracy<-function(model){
+  prediction = ifelse(fitted(model)>0.5,1,0)
+  true_positive_ratio = length(which(prediction==1&d$result==1)) / length(which(d$result==1))
+  true_negative_ratio = length(which(prediction==0&d$result==0)) / length(which(d$result==0))
+  (true_positive_ratio + true_negative_ratio) / 2
+}
+balancedAccuracy(logitfull_result)
+
 
 #######################
 # 2) Séries temporelles
