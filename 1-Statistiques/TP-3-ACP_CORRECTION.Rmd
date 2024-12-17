@@ -1,0 +1,250 @@
+
+
+
+## Packages
+
+Plusieurs packages sont disponibles pour réaliser des ACP avec R.
+Dans ce TP nous utiliserons les packages `ade4` qui réalise les calculs  et  `factoextra`  qui fournit des outils pour visualiser les résultats.
+
+```{r packages, eval= F}
+install.packages("ade4")
+install.packages("factoextra")
+```
+
+
+Nous utiliserons aussi un package pour les données : `palmerpenguins`, de Horst AM, Hill AP, Gorman KB (2020) , et qui fournit des mesures de la morphologie de trois espèces de pengouins: 
+
+
+```{r penguins, eval= F}
+install.packages("palmerpenguins")
+```
+
+Une fois installés, on charge ces packages ainsi que d'autres déjà connus : `dplyr`, `ggplot2`
+
+```{r libs, eval= F}
+library(dplyr)
+library(ggplot2)
+library(ade4)
+library(factoextra)
+library(palmerpenguins)
+```
+
+## Données 
+
+les données sont décrites sur la page github du package : https://allisonhorst.github.io/palmerpenguins/ 
+
+Nous utiliserons l'objet `penguins` fourni par ce package , dont voici les 6 premières lignes: 
+
+
+```{r data}
+data("penguins")
+head(penguins)
+```
+
+### Question 1 : Préparation des données 
+
+Filtrer les observations non attribuées, de façon à ce qu'il n'y ait plus de valeurs `NA` dans le dataframe. 
+
+**Indice** : Utiliser les fonctions `anyNA` et `na.omit`
+
+
+```{r}
+p <- penguins[!apply(penguins,MARGIN = 1,anyNA),]
+```
+
+
+### Question 2 : Affichage des données 
+
+Commencer par afficher les noms et les types des variables du dataset `penguins`.
+Réaliser ensuite :
+ - un affichage des nuages de points des variables **numériques** deux à deux
+ - calculer leur corrélations 
+ - afficher la densité ou l'histogramme de chaque variable  
+
+```{r}
+library(corrplot)
+corrplot(cor(p))
+```
+
+Commenter ces graphiques : quelle structure remarquez-vous ? 
+
+**Indice** : Utiliser les fonctions de base `cor`, `plot` , `hist`, ou  `ggpairs` du package `GGally`
+
+
+Voici une version synthétique de ce que vous devriez obtenir :
+
+```{r correlogramm, echo=F, cache=T, fig.height=5}
+penguins <-  na.omit(penguins)
+library(GGally)
+ggpairs(penguins[3:6], title="Correlogram of penguins numeric variables",
+         lower = list(continuous =wrap("points",  color="darkcyan",   size=0.3), combo = "facethist", discrete = "facetbar", na ="na"),  
+        diag = list(continuous = wrap("densityDiag", size=0.5,color="darkcyan"), discrete = "barDiag", na = "naDiag")
+        ) +theme_light()
+```
+
+
+
+### Question 3 : Préparation des données
+
+Créer un dataframe nommé `dataACP` contenant uniquement les variables numériques qui dévrivent la morphologie des pingouins.
+
+
+**Indice** : utiliser la fonction `select` du package `dplyr` , ou l'indexation de colonne standard.
+
+```{r}
+dataACP <- p %>% select(bill_length_mm,bill_depth_mm,flipper_length_mm,body_mass_g)
+```
+
+
+## Analyse en composantes principales
+
+
+### Question 4 : calculer l'inertie de `dataACP` *sans les normaliser*
+
+*Indice* : utiliser la fonction `var` pour calculer la variance d'un vecteur / d'une liste / d'une colonne, la fonction `diag` qui renvoie la diagonale d'une matrice carrée
+
+```{r}
+apply(dataACP,MARGIN = 2,var)
+sum(apply(dataACP,MARGIN = 2,var))
+sum(diag(cov(dataACP)))
+```
+
+### Question 4 bis : Pourquoi calculer l'inertie de variables normalisées est inutile (et trivial) ?
+
+
+### Question 5 : Réaliser une ACP sur  `dataACP` et stocker le résultat dans une variable (e.g. `result_ACP`) 
+
+```{r}
+pca <- prcomp(dataACP,scale. = T)
+summary(pca)
+fviz_pca_var(pca)
+fviz_pca_ind(pca)
+pca$rotation
+```
+
+*Indice* : utiliser la fonction `dudi.pca` du package `ade4` et les fonctions du package `factoextra` : 
+
+```{r}
+fancy_pca <- dudi.pca(df = dataACP, scannf = FALSE, nf = 2)
+fviz_eig(fancy_pca)
+```
+
+```{r}
+fviz_pca_biplot(fancy_pca)
+```
+
+```{r}
+inds = cbind(get_pca_ind(fancy_pca)$coord,p[,c("species","island","sex","year")])
+ggplot(inds)+geom_point(aes(x=Dim.1,y=Dim.2,color=species))
+```
+
+
+
+- `get_eigenvalue` : Extraction des valeurs propres / variances des composantes principales
+- `fviz_eig` : Visualisation des valeurs propres
+- `get_pca_ind`, `get_pca_var`: Extraction des résultats pour les individus et les variables, respectivement.
+- `fviz_pca_ind`, `fviz_pca_var`: visualisez les résultats des individus et des variables, respectivement.
+
+
+Bien que les fonctions de `factoextra` fassent le travail pour vous, il est important de bien lire la documentation de la fonction `dudi.pca` pour savoir quels attributs extraire de l'objet résultat, dans le cas d'une automatisation des traitements par exemple.
+
+
+
+### Question 5 bis : quel est le pourcentage d'inertie capturée  par les deux premières composantes ? Comment l'obtenir sans lire le scree-plot ?
+
+
+
+
+### Question 5 ter : quelle est la coordonnée de la deuxième composante dans l'espace de départ ?
+
+
+
+### Question 6 : D'après-vous, faut-il normaliser les variables de `dataACP` lors de l'ACP ? Pourquoi ?  
+
+Pour s'en assurer,  recommencer le calcul de l'ACP et comparer les résultats .
+
+----
+
+## Interprétation des résultats
+
+
+### Question 7 : l'ACP s'est-elle bien passée ? Justifier .
+
+
+Vous devriez obtenir à la question 5 un graphique à l'allure suivante : 
+
+
+```{r ACP1, echo=F, cache=T, fig.height=2, fig.width=4}
+penguins <-  na.omit(penguins)
+dataACP <- penguins %>%  select(bill_length_mm, bill_depth_mm,flipper_length_mm,body_mass_g  )
+res.pca <-  dudi.pca(dataACP, nf=4, scannf = F, center=T, scale=T)
+fviz_eig(res.pca, ylab="%age d'inertie")
+```
+
+
+
+
+
+
+
+### Question 8 : Que dire des variables projetées dans le plan formé par les deux premières composantes ?
+
+
+```{r ACP2, echo=F, cache=T, fig.height=4, fig.width=4}
+fviz_pca_var(res.pca)
+```
+
+
+### Question 9 :  Quelle est la contribution des variables `bill_length`  et `bill_depth` à la 3ème composante ? 
+
+ &nbsp; &nbsp;
+ 
+ 
+
+### Question 10 : projeter les individus dans le plan formé par les deux premières composantes . Interpréter. 
+
+```{r ACP3, echo=F, eval=F,cache=T, fig.height=5}
+fviz_pca_ind(pca,axes = c(3, 4))
+```
+
+*Indice* : cf. la liste des fonctions de `factoextra`
+
+
+## Regrouppements
+
+Nous cherchons maintenant à trouver une projection qui permette de séparer visuellement les trois espèces de pengouins. 
+
+
+Voici comment obtenir des nuages de points des variables des pingouins ,colorés par espèce : 
+
+
+```{r ACP4, echo=T, cache=T, fig.height=4}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, colour = species)) +
+  geom_point() +
+  theme_light()
+
+```
+
+
+Voici une version pour tous les couples de variables : 
+
+```{r ACP5, echo=T, cache=T, fig.height=4}
+ggpairs(data= penguins[,c("species" ,"bill_length_mm","bill_depth_mm", "flipper_length_mm", "body_mass_g" )], 
+        columns = c("bill_length_mm","bill_depth_mm", "flipper_length_mm", "body_mass_g" ),
+        #lower = list(continuous ="points", size=0.1),
+        lower= list(continuous =wrap("points",  size=0.3), combo = "facethist", discrete = "facetbar", na ="na"),
+         #upper= list(continuous =wrap("points",  size=0.3), combo = "facethist", discrete = "facetbar", na ="na"),
+        title="Scatterplot of penguins numeric variables by species",
+        
+        diag=NULL,
+        upper=NULL,
+        mapping = aes(color=species)
+        ) +theme_light()
+```
+
+
+
+
+### Question 11 : Les graphiques ci-dessus permettent-ils d'opérer cette classification visuelle ? 
+
+
