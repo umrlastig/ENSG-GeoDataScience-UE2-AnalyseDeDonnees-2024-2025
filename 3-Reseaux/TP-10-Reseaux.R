@@ -237,7 +237,7 @@ source('https://raw.githubusercontent.com/JusteRaimbault/TransportationNetwork/m
 # - calcul des accessibilités aux aménités
 # - utilisation des paramètres du modèle gravitaire
 # - scenario : taxe sur l'essence, impact sur l'accessibilité
-
+# - package r5r
 
 
 
